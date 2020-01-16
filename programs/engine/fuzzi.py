@@ -7,23 +7,17 @@ def prim_symmetric_geometric(a, b):
 
     :return: a sample/ndarray of samples from the given geometric distribution
     """
-    import numpy as np
     shape = np.shape(a)
-    if shape == (1,) or shape == ():
+    noise = np.zeros(shape=shape)
+    for index, value in np.ndenumerate(noise):
         np.random.seed()
         x = np.random.geometric(1 - b)
         np.random.seed()
         y = np.random.geometric(1 - b)
-        return a + x - y
-    else:
-        noise = np.zeros(shape=np.shape(a))
-        for index, value in np.ndenumerate(noise):
-            np.random.seed()
-            x = np.random.geometric(1 - b)
-            np.random.seed()
-            y = np.random.geometric(1 - b)
-            noise[index] = x - y
-        return a + noise
+        noise[index] = x - y
+    result = a + noise
+    assert result.shape == a.shape
+    return result
 
 def loop_geometric(true_answer_sens_eps):
   """

@@ -662,18 +662,15 @@ def make_dp_node(config, geounitNode):
     if config['budget']['DPqueries']:
         n_queries = len(dp_query_names)
 
-        fuzzi_inputs = []
         for i in range(n_queries):
             name = dp_query_names[i]
             query = queries_dict[name]
             budgetprop = float(dp_query_prop[i])
             sens = float(dp_query_sens[i])
-            fuzzi_input = (query.answer(geounitNode.raw.toDense()), (sens, budgetprop * dp_budget))
-            fuzzi_inputs.append((name, fuzzi_input))
+            true_answer = query.answer(geounitNode.raw.toDense())
+            eps = budgetprop * dp_budget
 
-        fuzzi_noised_outputs = fuzzi.loop_geometric([x[1] for x in fuzzi_inputs])
-        for name, (noised_answer, variance) in zip([x[0] for x in fuzzi_inputs], fuzzi_noised_outputs):
-            DPanswer, Var = noised_answer, variance
+            [(DPanswer, Var)] = fuzzi.loop_geometric([(true_answer, (sens, eps))])
             dp_query = {name: cenquery.DPquery(query=query, DPanswer=np.array(DPanswer),
                                              epsilon = budgetprop*dp_budget, DPmechanism = "geometric",
                                              Var = Var)}
@@ -682,8 +679,7 @@ def make_dp_node(config, geounitNode):
     DPgeounitNode = geounitNode
     DPgeounitNode.dp_queries = dp_queries
 
-    [(noised_answer, variance)] = fuzzi.loop_geometric([(geounitNode.raw.toDense(), (detailed_sens, detailed_prop * dp_budget))])
-    DPanswer, Var = noised_answer, variance
+    [(DPanswer, Var)] = fuzzi.loop_geometric([(geounitNode.raw.toDense(), (detailed_sens, detailed_prop*dp_budget))])
 
     query = cenquery.Query(array_dims = geounitNode.raw.shape)
     DPgeounitNode.dp  = cenquery.DPquery(query=query, DPanswer=DPanswer,
